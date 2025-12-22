@@ -1,0 +1,25 @@
+name: ccms_app
+description: Smart College Committees mobile app
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ">=2.18.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management (can be used later)
+  flutter_riverpod: ^2.3.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/bit_logo.png
