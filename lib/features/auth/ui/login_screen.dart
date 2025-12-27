@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/app_textfield.dart';
 import '../../../shared/widgets/app_button.dart';
-import '../../home/ui/home_screen.dart';
+import '../../../core/auth/role_router.dart';
+import '../../../core/auth/user_role.dart';
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
@@ -12,18 +16,21 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
 
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
-  final _emailFocus = FocusNode();
-  final _passwordFocus = FocusNode();
+  final FocusNode _emailFocus = FocusNode();
+  final FocusNode _passwordFocus = FocusNode();
+
+  // TEMP: mock role
+  final UserRole _mockRole = UserRole.admin;
 
   bool _loading = false;
   String? _error;
 
-  late AnimationController _cardController;
-  late Animation<Offset> _cardSlide;
-  late Animation<double> _cardFade;
+  late final AnimationController _cardController;
+  late final Animation<Offset> _cardSlide;
+  late final Animation<double> _cardFade;
 
   @override
   void initState() {
@@ -38,7 +45,10 @@ class _LoginScreenState extends State<LoginScreen>
       begin: const Offset(0, 0.08),
       end: Offset.zero,
     ).animate(
-      CurvedAnimation(parent: _cardController, curve: Curves.easeOut),
+      CurvedAnimation(
+        parent: _cardController,
+        curve: Curves.easeOut,
+      ),
     );
 
     _cardFade = CurvedAnimation(
@@ -59,56 +69,54 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
-  void _fakeLogin() async {
-  FocusScope.of(context).unfocus();
+  Future<void> _fakeLogin() async {
+    FocusScope.of(context).unfocus();
 
-  setState(() {
-    _loading = true;
-    _error = null;
-  });
-
-  await Future.delayed(const Duration(milliseconds: 800));
-
-  if (_emailController.text.isEmpty ||
-      _passwordController.text.length < 8) {
     setState(() {
-      _error = 'Enter valid email and password (min 8 characters)';
-      _loading = false;
+      _loading = true;
+      _error = null;
     });
-    return;
+
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    if (_emailController.text.isEmpty ||
+        _passwordController.text.length < 8) {
+      setState(() {
+        _error = 'Enter valid email and password (min 8 characters)';
+        _loading = false;
+      });
+      return;
+    }
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => RoleRouter.resolve(_mockRole),
+      ),
+    );
   }
-
-  Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(
-      builder: (_) => const HomeScreen(),
-    ),
-  );
-}
-
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      behavior: HitTestBehavior.translucent, // ✅ THIS FIXES IT
+      behavior: HitTestBehavior.translucent,
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        resizeToAvoidBottomInset: true,
         backgroundColor: AppTheme.bg,
         body: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
               children: [
-
                 const SizedBox(height: 32),
 
-                // 🔵 HEADER (LOGO INSTEAD OF CC)
+                // HEADER
                 Column(
                   children: [
                     Container(
                       height: 72,
                       width: 72,
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: Colors.white,
@@ -119,7 +127,6 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                         ],
                       ),
-                      padding: const EdgeInsets.all(10),
                       child: Image.asset(
                         'assets/images/bit_logo.png',
                         fit: BoxFit.contain,
@@ -147,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen>
 
                 const SizedBox(height: 36),
 
-                // 🔵 LOGIN CARD (ANIMATED)
+                // LOGIN CARD
                 SlideTransition(
                   position: _cardSlide,
                   child: FadeTransition(
@@ -167,7 +174,6 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
                       child: Column(
                         children: [
-
                           AppTextField(
                             controller: _emailController,
                             label: 'Email',
@@ -226,9 +232,9 @@ class _LoginScreenState extends State<LoginScreen>
 
                 const SizedBox(height: 28),
 
-                // 🔵 FOOTER
+                // FOOTER
                 Text(
-                  'We auto-assign roles when you sign in using college email\n(@bitmails.ac.in)',
+                  'Roles are automatically assigned based on college email\n(@bitmails.ac.in)',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12,
