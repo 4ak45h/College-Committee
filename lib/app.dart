@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'features/committee/committee_home_page.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/ui/splash_screen.dart'; // ✅ THIS WAS MISSING
 
@@ -9,7 +9,8 @@ class CCMSApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
-      home: SplashScreen(), // Splash → Login
+       home: CommitteeHomePage(),
+// Splash → Login
     );
   }
 }
