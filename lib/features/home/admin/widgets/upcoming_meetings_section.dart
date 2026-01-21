@@ -1,184 +1,197 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
 
-class UpcomingMeetingsSection extends StatelessWidget {
+class UpcomingMeetingsSection extends StatefulWidget {
   const UpcomingMeetingsSection({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // MOCK DATA (later from backend)
-    final meetingsByDay = {
-      '12 Sep': [
-        _Meeting('Academic Review Committee', '10:00 AM'),
-        _Meeting('Research Council', '2:00 PM'),
-      ],
-      '14 Sep': [
-        _Meeting('Cultural Committee', '2:00 PM'),
-      ],
-    };
+  State<UpcomingMeetingsSection> createState() =>
+      _UpcomingMeetingsSectionState();
+}
 
+class _UpcomingMeetingsSectionState extends State<UpcomingMeetingsSection> {
+  bool _expanded12Sep = false;
+  bool _expanded14Sep = false;
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Upcoming Meetings',
           style: TextStyle(
-            fontSize: 17,
+            fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 12),
 
-        ...meetingsByDay.entries.map(
-          (entry) => _MeetingDayCard(
-            date: entry.key,
-            meetings: entry.value,
-          ),
+        _DateGroupTile(
+          dateLabel: '12 Sep',
+          meetingCount: 2,
+          expanded: _expanded12Sep,
+          onTap: () {
+            setState(() {
+              _expanded12Sep = !_expanded12Sep;
+            });
+          },
+          children: [
+            _MeetingTile(
+              title: 'Academic Review Meeting',
+              time: '10:00 AM – 11:30 AM',
+              committee: 'Academic Review Committee',
+            ),
+            _MeetingTile(
+              title: 'Curriculum Planning',
+              time: '12:00 PM – 1:00 PM',
+              committee: 'Academic Review Committee',
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 8),
+
+        _DateGroupTile(
+          dateLabel: '14 Sep',
+          meetingCount: 1,
+          expanded: _expanded14Sep,
+          onTap: () {
+            setState(() {
+              _expanded14Sep = !_expanded14Sep;
+            });
+          },
+          children: [
+            _MeetingTile(
+              title: 'Cultural Fest Planning',
+              time: '2:00 PM – 3:00 PM',
+              committee: 'Cultural Committee',
+            ),
+          ],
         ),
       ],
     );
   }
 }
 
-class _Meeting {
-  final String committee;
-  final String time;
+/* =========================
+   DATE GROUP TILE
+   ========================= */
 
-  _Meeting(this.committee, this.time);
-}
+class _DateGroupTile extends StatelessWidget {
+  final String dateLabel;
+  final int meetingCount;
+  final bool expanded;
+  final VoidCallback onTap;
+  final List<Widget> children;
 
-class _MeetingDayCard extends StatefulWidget {
-  final String date;
-  final List<_Meeting> meetings;
-
-  const _MeetingDayCard({
-    required this.date,
-    required this.meetings,
+  const _DateGroupTile({
+    required this.dateLabel,
+    required this.meetingCount,
+    required this.expanded,
+    required this.onTap,
+    required this.children,
   });
 
   @override
-  State<_MeetingDayCard> createState() => _MeetingDayCardState();
-}
-
-class _MeetingDayCardState extends State<_MeetingDayCard> {
-  bool _expanded = false;
-
-  @override
   Widget build(BuildContext context) {
-    final hasMultiple = widget.meetings.length > 1;
-
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         children: [
           InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: hasMultiple
-                ? () => setState(() => _expanded = !_expanded)
-                : null,
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(14),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(14),
               child: Row(
                 children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primary.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.calendar_today_outlined,
-                      color: AppTheme.primary,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.date,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          hasMultiple
-                              ? '${widget.meetings.length} meetings scheduled'
-                              : '${widget.meetings.first.committee} · ${widget.meetings.first.time}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppTheme.muted,
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      '$dateLabel · $meetingCount meeting${meetingCount > 1 ? 's' : ''}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                  if (hasMultiple)
-                    Icon(
-                      _expanded
-                          ? Icons.keyboard_arrow_up
-                          : Icons.keyboard_arrow_down,
-                      color: AppTheme.muted,
-                    ),
+                  Icon(
+                    expanded
+                        ? Icons.expand_less
+                        : Icons.expand_more,
+                    color: Colors.black54,
+                  ),
                 ],
               ),
             ),
           ),
-
-          if (_expanded)
+          if (expanded) ...[
             const Divider(height: 1),
-
-          if (_expanded)
-            Column(
-              children: widget.meetings
-                  .map(
-                    (m) => Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      child: Row(
-                        children: [
-                          const SizedBox(width: 58),
-                          Expanded(
-                            child: Text(
-                              m.committee,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            m.time,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppTheme.muted,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
+            ...children,
+          ],
         ],
+      ),
+    );
+  }
+}
+
+/* =========================
+   MEETING TILE (READ-ONLY)
+   ========================= */
+
+class _MeetingTile extends StatelessWidget {
+  final String title;
+  final String time;
+  final String committee;
+
+  const _MeetingTile({
+    required this.title,
+    required this.time,
+    required this.committee,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Meeting details view coming soon'),
+          ),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '$time · $committee',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.black54,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

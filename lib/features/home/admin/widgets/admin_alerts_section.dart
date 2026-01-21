@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../approvals/ui/approval_queue_screen.dart';
+import '../../../committees/ui/committees_screen.dart';
 
 class AdminAlertsSection extends StatelessWidget {
   const AdminAlertsSection({super.key});
@@ -12,104 +14,140 @@ class AdminAlertsSection extends StatelessWidget {
         const Text(
           'Requires Administrative Attention',
           style: TextStyle(
-            fontSize: 17,
+            fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 12),
 
-        _AlertCard(
+        // ALERT 1 — Pending Approvals
+        _AlertTile(
           icon: Icons.approval_outlined,
           title: 'Pending Approvals',
-          description: '3 events awaiting your approval',
+          subtitle: '3 requests awaiting decision',
+          color: Colors.orange,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const ApprovalQueueScreen(),
+              ),
+            );
+          },
         ),
 
-        const SizedBox(height: 10),
-
-        _AlertCard(
+        // ALERT 2 — Inactive Committees
+        _AlertTile(
           icon: Icons.pause_circle_outline,
           title: 'Inactive Committees',
-          description: '2 committees inactive for over 60 days',
+          subtitle: '2 committees inactive for over 30 days',
+          color: Colors.grey,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const CommitteesScreen(),
+              ),
+            );
+          },
         ),
 
-        const SizedBox(height: 10),
-
-        _AlertCard(
-          icon: Icons.schedule_outlined,
+        // ALERT 3 — Overdue Tasks
+        _AlertTile(
+          icon: Icons.warning_amber_outlined,
           title: 'Overdue Tasks',
-          description: '5 tasks have exceeded their deadlines',
+          subtitle: '5 tasks overdue across committees',
+          color: Colors.red,
+          onTap: () {
+            // Future: Overdue tasks overview
+          },
         ),
       ],
     );
   }
 }
 
-class _AlertCard extends StatelessWidget {
+/* =========================
+   ALERT TILE
+   ========================= */
+
+class _AlertTile extends StatelessWidget {
   final IconData icon;
   final String title;
-  final String description;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
 
-  const _AlertCard({
+  const _AlertTile({
     required this.icon,
     required this.title,
-    required this.description,
+    required this.subtitle,
+    required this.color,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 4,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppTheme.primary,
-              borderRadius: BorderRadius.circular(4),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-          ),
-          const SizedBox(width: 12),
-          Icon(
-            icon,
-            color: AppTheme.primary,
-            size: 26,
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  description,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppTheme.muted,
-                  ),
-                ),
-              ],
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                icon,
+                color: color,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right,
+              size: 20,
+              color: Colors.black38,
+            ),
+          ],
+        ),
       ),
     );
   }

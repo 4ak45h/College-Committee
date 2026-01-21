@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/app_textfield.dart';
 import '../../../shared/widgets/app_button.dart';
-import '../../../core/auth/role_router.dart';
-import '../../../core/auth/user_role.dart';
+import '../../home/admin/ui/admin_home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,15 +14,11 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
-
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
   final FocusNode _emailFocus = FocusNode();
   final FocusNode _passwordFocus = FocusNode();
-
-  // TEMP: mock role
-  final UserRole _mockRole = UserRole.admin;
 
   bool _loading = false;
   String? _error;
@@ -88,10 +83,11 @@ class _LoginScreenState extends State<LoginScreen>
       return;
     }
 
+    // ADMIN APP: direct navigation after login
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) => RoleRouter.resolve(_mockRole),
+        builder: (_) => const AdminHomeScreen(),
       ),
     );
   }
@@ -185,9 +181,7 @@ class _LoginScreenState extends State<LoginScreen>
                                   .requestFocus(_passwordFocus);
                             },
                           ),
-
                           const SizedBox(height: 14),
-
                           AppTextField(
                             controller: _passwordController,
                             label: 'Password',
@@ -196,7 +190,6 @@ class _LoginScreenState extends State<LoginScreen>
                             textInputAction: TextInputAction.done,
                             onSubmitted: (_) => _fakeLogin(),
                           ),
-
                           AnimatedSwitcher(
                             duration: const Duration(milliseconds: 300),
                             child: _error == null
@@ -205,24 +198,16 @@ class _LoginScreenState extends State<LoginScreen>
                                     padding: const EdgeInsets.only(top: 10),
                                     child: Text(
                                       _error!,
-                                      style: const TextStyle(color: Colors.red),
+                                      style:
+                                          const TextStyle(color: Colors.red),
                                     ),
                                   ),
                           ),
-
                           const SizedBox(height: 20),
-
                           AppButton(
                             label: 'Sign In',
                             loading: _loading,
                             onPressed: _fakeLogin,
-                          ),
-
-                          const SizedBox(height: 10),
-
-                          TextButton(
-                            onPressed: () {},
-                            child: const Text('New user? Register'),
                           ),
                         ],
                       ),
@@ -234,14 +219,13 @@ class _LoginScreenState extends State<LoginScreen>
 
                 // FOOTER
                 Text(
-                  'Roles are automatically assigned based on college email\n(@bitmails.ac.in)',
+                  'Access is restricted to authorized administration accounts',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12,
                     color: AppTheme.muted,
                   ),
                 ),
-
                 const SizedBox(height: 20),
               ],
             ),

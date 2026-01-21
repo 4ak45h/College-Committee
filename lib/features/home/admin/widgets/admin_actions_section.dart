@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
 
+import '../../../committees/ui/committees_screen.dart';
+import '../../../approvals/ui/approval_queue_screen.dart';
+import '../../../faculty/ui/faculty_management_screen.dart';
+
 class AdminActionsSection extends StatelessWidget {
   const AdminActionsSection({super.key});
 
@@ -12,33 +16,66 @@ class AdminActionsSection extends StatelessWidget {
         const Text(
           'Administrative Controls',
           style: TextStyle(
-            fontSize: 17,
+            fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
+
         GridView.count(
           crossAxisCount: 2,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          children: const [
+          children: [
             _ActionCard(
               icon: Icons.groups_outlined,
-              label: 'Manage Committees',
+              title: 'Manage Committees',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const CommitteesScreen(),
+                  ),
+                );
+              },
             ),
             _ActionCard(
               icon: Icons.approval_outlined,
-              label: 'Approval Queue',
+              title: 'Approval Queue',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ApprovalQueueScreen(),
+                  ),
+                );
+              },
             ),
             _ActionCard(
-              icon: Icons.manage_accounts_outlined,
-              label: 'Manage Faculty',
+              icon: Icons.person_outline,
+              title: 'Manage Faculty',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const FacultyManagementScreen(),
+                  ),
+                );
+              },
             ),
             _ActionCard(
-              icon: Icons.bar_chart_outlined,
-              label: 'Reports & Analytics',
+              icon: Icons.analytics_outlined,
+              title: 'Reports & Analytics',
+              onTap: () {
+                // Placeholder — will be implemented later
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Reports & Analytics coming soon'),
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -47,48 +84,58 @@ class AdminActionsSection extends StatelessWidget {
   }
 }
 
+/* =========================
+   ACTION CARD
+   ========================= */
+
 class _ActionCard extends StatelessWidget {
   final IconData icon;
-  final String label;
+  final String title;
+  final VoidCallback onTap;
 
   const _ActionCard({
     required this.icon,
-    required this.label,
+    required this.title,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 22),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            size: 30,
-            color: AppTheme.primary,
-          ),
-          const SizedBox(height: 14),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
             ),
-          ),
-        ],
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 28,
+              color: AppTheme.primary,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
