@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'features/committee/committee_home_page.dart';
 import 'core/theme/app_theme.dart';
-import 'features/auth/ui/splash_screen.dart'; // ✅ THIS WAS MISSING
+import 'features/auth/ui/splash_screen.dart';
 
 class CCMSApp extends StatelessWidget {
   @override
@@ -9,8 +8,9 @@ class CCMSApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
-       home: CommitteeHomePage(),
-// Splash → Login
+
+      // App starts here
+      home: SplashScreen(),
     );
   }
 }
