@@ -3,6 +3,7 @@ import '../../../core/theme/app_theme.dart';
 import '../widgets/greeting_card.dart';
 import '../widgets/event_card.dart';
 import '../widgets/quick_actions.dart';
+import '../../committee/committee_home_page.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -13,6 +14,21 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+
+  Widget _homeContent() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: const [
+          GreetingCard(),
+          SizedBox(height: 16),
+          EventCard(),
+          SizedBox(height: 20),
+          QuickActions(),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,22 +45,20 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
 
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: const [
-            GreetingCard(),
-            SizedBox(height: 16),
-            EventCard(),
-            SizedBox(height: 20),
-            QuickActions(),
-          ],
-        ),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: [
+          _homeContent(),
+          const CommitteeHomePage(),
+          const Center(child: Text("Profile Page Coming Soon")),
+        ],
       ),
 
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (i) => setState(() => _currentIndex = i),
+        onTap: (i) {
+          setState(() => _currentIndex = i);
+        },
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
