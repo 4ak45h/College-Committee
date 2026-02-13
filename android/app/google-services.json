@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "373961493579",
+    "project_id": "ccms-admin-app",
+    "storage_bucket": "ccms-admin-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:373961493579:android:2b5b4d68529a3af85811ce",
+        "android_client_info": {
+          "package_name": "com.example.ccms_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDt9DgcO46MeSfzNEO3m4ny-N221iSONAw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

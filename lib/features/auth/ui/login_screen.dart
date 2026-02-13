@@ -4,6 +4,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/app_textfield.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../home/admin/ui/admin_home_screen.dart';
+import '../../../services/admin_auth_service.dart';
+
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,6 +18,8 @@ class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final AdminAuthService _authService = AdminAuthService();
+
 
   final FocusNode _emailFocus = FocusNode();
   final FocusNode _passwordFocus = FocusNode();
@@ -64,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
-  Future<void> _fakeLogin() async {
+  Future<void> _handleLogin() async {
     FocusScope.of(context).unfocus();
 
     setState(() {
@@ -72,25 +76,31 @@ class _LoginScreenState extends State<LoginScreen>
       _error = null;
     });
 
-    await Future.delayed(const Duration(milliseconds: 800));
+    try {
+      if (_emailController.text.isEmpty ||
+          _passwordController.text.isEmpty) {
+        throw "Enter valid email and password";
+      }
 
-    if (_emailController.text.isEmpty ||
-        _passwordController.text.length < 8) {
+      await _authService.login(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const AdminHomeScreen(),
+        ),
+      );
+    } catch (e) {
       setState(() {
-        _error = 'Enter valid email and password (min 8 characters)';
+        _error = e.toString();
         _loading = false;
       });
-      return;
     }
-
-    // ADMIN APP: direct navigation after login
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const AdminHomeScreen(),
-      ),
-    );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -188,7 +198,7 @@ class _LoginScreenState extends State<LoginScreen>
                             obscure: true,
                             focusNode: _passwordFocus,
                             textInputAction: TextInputAction.done,
-                            onSubmitted: (_) => _fakeLogin(),
+                            onSubmitted: (_) => _handleLogin(),
                           ),
                           AnimatedSwitcher(
                             duration: const Duration(milliseconds: 300),
@@ -207,7 +217,7 @@ class _LoginScreenState extends State<LoginScreen>
                           AppButton(
                             label: 'Sign In',
                             loading: _loading,
-                            onPressed: _fakeLogin,
+                            onPressed: _handleLogin,
                           ),
                         ],
                       ),
