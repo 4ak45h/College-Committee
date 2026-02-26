@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import 'change_leadership_sheet.dart';
+import 'committee_list_card.dart';
 
 class CommitteeAdminOverview extends StatelessWidget {
-  const CommitteeAdminOverview({super.key});
+  final CommitteeStatus status;
+
+  const CommitteeAdminOverview({
+    super.key,
+    required this.status,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final bool isActive = status == CommitteeStatus.active;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -32,29 +40,128 @@ class CommitteeAdminOverview extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          _InfoRow(label: 'Status', value: 'Active'),
-          _InfoRow(label: 'Chairperson', value: 'Dr. R. Mehta'),
-          _InfoRow(label: 'Coordinator', value: 'Prof. S. Kumar'),
+          _InfoRow(
+            label: 'Status',
+            value: isActive ? 'Active' : 'Inactive',
+          ),
+          const _InfoRow(label: 'Chairperson', value: 'Dr. R. Mehta'),
+          const _InfoRow(label: 'Coordinator', value: 'Prof. S. Kumar'),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
 
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: () {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton.icon(
+                onPressed: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(20)),
+                    ),
+                    builder: (_) => const ChangeLeadershipSheet(),
+                  );
+                },
+                icon: const Icon(Icons.swap_horiz),
+                label: const Text('Change Leadership'),
+              ),
+              const SizedBox(width: 8),
+
+              if (isActive)
+                TextButton.icon(
+                  onPressed: () {
+                    _showDeactivateDialog(context);
+                  },
+                  icon: const Icon(
+                    Icons.pause_circle_outline,
+                    color: Colors.red,
                   ),
-                  builder: (_) => const ChangeLeadershipSheet(),
-                );
-              },
+                  label: const Text(
+                    'Deactivate',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                )
+              else
+                TextButton.icon(
+                  onPressed: () {
+                    _showReactivateDialog(context);
+                  },
+                  icon: const Icon(
+                    Icons.play_circle_outline,
+                    color: Colors.green,
+                  ),
+                  label: const Text(
+                    'Reactivate',
+                    style: TextStyle(color: Colors.green),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
-              icon: const Icon(Icons.swap_horiz),
-              label: const Text('Change Leadership'),
+  void _showDeactivateDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Deactivate Committee'),
+        content: const Text(
+          'This will temporarily disable the committee.\n\nYou can reactivate it later.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
             ),
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Committee deactivated'),
+                ),
+              );
+            },
+            child: const Text('Deactivate'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showReactivateDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Reactivate Committee'),
+        content: const Text(
+          'This will restore committee operations and member access.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Committee reactivated'),
+                ),
+              );
+            },
+            child: const Text('Reactivate'),
           ),
         ],
       ),

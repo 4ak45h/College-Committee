@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
+import 'roles_permissions_screen.dart';
+import 'system_settings_screen.dart';
+import 'audit_logs_screen.dart';
+import 'change_password_screen.dart';
+import '../../../services/audit_log_service.dart';
 
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key});
@@ -23,36 +28,68 @@ class AccountScreen extends StatelessWidget {
             const SizedBox(height: 24),
 
             _sectionTitle('System'),
+
             _actionTile(
               icon: Icons.admin_panel_settings_outlined,
               title: 'Roles & Permissions',
               subtitle: 'Manage administrative access',
-              onTap: () => _comingSoon(context),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const RolesPermissionsScreen(),
+                  ),
+                );
+              },
             ),
+
             _actionTile(
               icon: Icons.settings_outlined,
               title: 'System Settings',
               subtitle: 'Configure application settings',
-              onTap: () => _comingSoon(context),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const SystemSettingsScreen(),
+                  ),
+                );
+              },
             ),
+
             _actionTile(
               icon: Icons.receipt_long_outlined,
               title: 'Audit Logs',
               subtitle: 'Review administrative activity',
-              onTap: () => _comingSoon(context),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AuditLogsScreen(),
+                  ),
+                );
+              },
             ),
 
             const SizedBox(height: 24),
 
             _sectionTitle('Security'),
+
             _actionTile(
               icon: Icons.lock_outline,
               title: 'Change Password',
               subtitle: 'Update account credentials',
-              onTap: () => _comingSoon(context),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ChangePasswordScreen(),
+                  ),
+                );
+              },
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             _logoutTile(context),
           ],
         ),
@@ -65,6 +102,11 @@ class AccountScreen extends StatelessWidget {
      ========================= */
 
   Widget _identityCard() {
+    final now = DateTime.now();
+
+    final formattedTime =
+        "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -79,6 +121,7 @@ class AccountScreen extends StatelessWidget {
         ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const CircleAvatar(
             radius: 26,
@@ -93,28 +136,44 @@ class AccountScreen extends StatelessWidget {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
+              children: [
+                const Text(
                   'Dr. A. Sharma',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                SizedBox(height: 4),
-                Text(
+                const SizedBox(height: 4),
+                const Text(
                   'Principal',
                   style: TextStyle(
                     fontSize: 13,
                     color: Colors.black54,
                   ),
                 ),
-                SizedBox(height: 2),
-                Text(
+                const SizedBox(height: 2),
+                const Text(
                   'Bangalore Institute of Technology',
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.black45,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Administrator • ID: ADM-001',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.muted,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Last login: Today, $formattedTime',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.muted,
                   ),
                 ),
               ],
@@ -216,8 +275,35 @@ class AccountScreen extends StatelessWidget {
   Widget _logoutTile(BuildContext context) {
     return InkWell(
       borderRadius: BorderRadius.circular(14),
-      onTap: () {
-        Navigator.of(context).popUntil((route) => route.isFirst);
+      onTap: () async {
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Logout?'),
+            content: const Text(
+                'You will need to login again to access the admin panel.'),
+            actions: [
+              TextButton(
+                onPressed: () =>
+                    Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () =>
+                    Navigator.pop(context, true),
+                child: const Text('Logout'),
+              ),
+            ],
+          ),
+        );
+
+        if (confirm == true) {
+          AuditLogService()
+              .addLog('Administrator logged out', 'Security');
+
+          Navigator.of(context)
+              .popUntil((route) => route.isFirst);
+        }
       },
       child: Container(
         padding: const EdgeInsets.all(14),
