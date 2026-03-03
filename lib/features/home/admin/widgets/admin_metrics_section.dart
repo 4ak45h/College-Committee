@@ -31,7 +31,7 @@ class AdminMetricsSection extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => const ApprovalQueueScreen(),
+                builder: (_) => ApprovalQueueScreen(),
               ),
             );
           },
@@ -54,7 +54,7 @@ class AdminMetricsSection extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const CommitteesScreen(),
+                    builder: (_) => CommitteesScreen(),
                   ),
                 );
               },
@@ -66,7 +66,7 @@ class AdminMetricsSection extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const FacultyManagementScreen(),
+                    builder: (_) => FacultyManagementScreen(),
                   ),
                 );
               },
@@ -78,7 +78,7 @@ class AdminMetricsSection extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const AdminEventsOverviewScreen(),
+                    builder: (_) => AdminEventsOverviewScreen(),
                   ),
                 );
               },

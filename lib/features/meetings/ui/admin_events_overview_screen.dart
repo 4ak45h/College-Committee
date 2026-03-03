@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../../core/theme/app_theme.dart';
+import '../../../services/event_service.dart';
 
 class AdminEventsOverviewScreen extends StatelessWidget {
-  const AdminEventsOverviewScreen({super.key});
+  AdminEventsOverviewScreen({super.key});
+
+  final EventService _eventService = EventService();
 
   @override
   Widget build(BuildContext context) {
@@ -14,30 +19,59 @@ class AdminEventsOverviewScreen extends StatelessWidget {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: const [
-          _EventCard(
-            title: 'Academic Review Meeting',
-            committee: 'Academic Review Committee',
-            date: '12 Sep 2026',
-            time: '10:00 AM – 11:30 AM',
-          ),
-          _EventCard(
-            title: 'Cultural Fest Planning',
-            committee: 'Cultural Committee',
-            date: '14 Sep 2026',
-            time: '2:00 PM – 3:00 PM',
-          ),
-          _EventCard(
-            title: 'Disciplinary Review',
-            committee: 'Disciplinary Committee',
-            date: '18 Sep 2026',
-            time: '11:00 AM – 12:00 PM',
-          ),
-        ],
+      body: StreamBuilder<QuerySnapshot>(
+        stream: _eventService.getEvents(),
+        builder: (context, snapshot) {
+          // 🔄 Loading state
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          // ❌ Error state
+          if (snapshot.hasError) {
+            return const Center(child: Text('Something went wrong'));
+          }
+
+          // 📭 Empty state
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text('No events found'));
+          }
+
+          final events = snapshot.data!.docs;
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: events.length,
+            itemBuilder: (context, index) {
+              final data = events[index].data() as Map<String, dynamic>;
+
+              // Convert Firestore Timestamp → formatted date
+              final Timestamp? timestamp = data['date'];
+              final String formattedDate =
+              timestamp != null ? _formatDate(timestamp) : 'N/A';
+
+              return _EventCard(
+                title: data['title'] ?? 'Untitled Event',
+                committee: data['committee'] ?? 'Unknown Committee',
+                date: formattedDate,
+                time: data['time'] ?? 'N/A',
+              );
+            },
+          );
+        },
       ),
     );
+  }
+
+  /// Helper: Timestamp → "12 Sep 2026"
+  String _formatDate(Timestamp timestamp) {
+    final DateTime dateTime = timestamp.toDate();
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+
+    return '${dateTime.day} ${months[dateTime.month - 1]} ${dateTime.year}';
   }
 }
 

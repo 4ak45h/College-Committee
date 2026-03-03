@@ -36,7 +36,7 @@ class AdminActionsSection extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const CommitteesScreen(),
+                    builder: (_) => CommitteesScreen(),
                   ),
                 );
               },
@@ -48,7 +48,7 @@ class AdminActionsSection extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const ApprovalQueueScreen(),
+                    builder: (_) => ApprovalQueueScreen(),
                   ),
                 );
               },
@@ -60,7 +60,7 @@ class AdminActionsSection extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const FacultyManagementScreen(),
+                    builder: (_) => FacultyManagementScreen(),
                   ),
                 );
               },

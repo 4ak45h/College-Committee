@@ -73,7 +73,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     case 0:
       return _buildDashboard();
     case 1:
-      return const CommitteesScreen();
+      return CommitteesScreen();
     case 2:
       return const AccountScreen();
     default:
