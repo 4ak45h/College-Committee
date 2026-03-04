@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../services/faculty_service.dart';
 
 class FacultyManagementScreen extends StatelessWidget {
-  const FacultyManagementScreen({super.key});
+  FacultyManagementScreen({super.key});
+
+  // 🔹 Service instance
+  final FacultyService _facultyService = FacultyService();
 
   @override
   Widget build(BuildContext context) {
@@ -14,32 +18,51 @@ class FacultyManagementScreen extends StatelessWidget {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: const [
-          _FacultyCard(
-            name: 'Dr. S. Kumar',
-            designation: 'Professor',
-            role: 'Committee Coordinator',
-          ),
-          _FacultyCard(
-            name: 'Prof. R. Mehta',
-            designation: 'Associate Professor',
-            role: 'Committee Chairperson',
-          ),
-          _FacultyCard(
-            name: 'Dr. A. Rao',
-            designation: 'Assistant Professor',
-            role: 'Committee Member',
-          ),
-        ],
+
+      // 🔹 StreamBuilder replacing hardcoded data
+      body: StreamBuilder(
+        stream: _facultyService.getFaculty(),
+        builder: (context, snapshot) {
+
+          // 🔄 Loading state
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          // ❌ Error state
+          if (snapshot.hasError) {
+            return const Center(child: Text('Something went wrong'));
+          }
+
+          // 📭 Empty state
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text('No faculty found'));
+          }
+
+          final facultyList = snapshot.data!.docs;
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: facultyList.length,
+            itemBuilder: (context, index) {
+              final data =
+              facultyList[index].data() as Map<String, dynamic>;
+
+              return _FacultyCard(
+                name: data['name'] ?? 'Unknown',
+                designation: data['designation'] ?? 'N/A',
+                role: data['role'] ?? 'Member',
+              );
+            },
+          );
+        },
       ),
     );
   }
 }
 
 /* =========================
-   FACULTY CARD
+   FACULTY CARD (UNCHANGED)
    ========================= */
 
 class _FacultyCard extends StatelessWidget {

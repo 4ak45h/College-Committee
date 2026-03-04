@@ -30,7 +30,7 @@ class AdminAlertsSection extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => const ApprovalQueueScreen(),
+                builder: (_) => ApprovalQueueScreen(),
               ),
             );
           },
@@ -46,7 +46,7 @@ class AdminAlertsSection extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => const CommitteesScreen(),
+                builder: (_) => CommitteesScreen(),
               ),
             );
           },

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../services/event_service.dart';
 
 class UpcomingMeetingsSection extends StatefulWidget {
   const UpcomingMeetingsSection({super.key});
@@ -9,68 +11,109 @@ class UpcomingMeetingsSection extends StatefulWidget {
       _UpcomingMeetingsSectionState();
 }
 
-class _UpcomingMeetingsSectionState extends State<UpcomingMeetingsSection> {
-  bool _expanded12Sep = false;
-  bool _expanded14Sep = false;
+class _UpcomingMeetingsSectionState
+    extends State<UpcomingMeetingsSection> {
+  final EventService _eventService = EventService();
+
+  /// Track expanded dates
+  final Map<String, bool> _expandedDates = {};
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Upcoming Meetings',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 12),
+    return StreamBuilder<QuerySnapshot>(
+      stream: _eventService.getUpcomingMeetings(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const CircularProgressIndicator();
+        }
 
-        _DateGroupTile(
-          dateLabel: '12 Sep',
-          meetingCount: 2,
-          expanded: _expanded12Sep,
-          onTap: () {
-            setState(() {
-              _expanded12Sep = !_expanded12Sep;
-            });
-          },
+        if (snapshot.hasError) {
+          return const Text('Failed to load meetings');
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Text('No upcoming meetings');
+        }
+
+        // 🔁 Group meetings by date
+        final Map<String, List<Map<String, dynamic>>> grouped = {};
+
+        for (var doc in snapshot.data!.docs) {
+          final data = doc.data() as Map<String, dynamic>;
+          final Timestamp ts = data['date'];
+          final date = ts.toDate();
+
+          final label =
+              '${date.day.toString().padLeft(2, '0')} '
+              '${_monthName(date.month)}';
+
+          grouped.putIfAbsent(label, () => []);
+          grouped[label]!.add(data);
+
+          _expandedDates.putIfAbsent(label, () => false);
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _MeetingTile(
-              title: 'Academic Review Meeting',
-              time: '10:00 AM – 11:30 AM',
-              committee: 'Academic Review Committee',
+            const Text(
+              'Upcoming Meetings',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            _MeetingTile(
-              title: 'Curriculum Planning',
-              time: '12:00 PM – 1:00 PM',
-              committee: 'Academic Review Committee',
-            ),
-          ],
-        ),
+            const SizedBox(height: 12),
 
-        const SizedBox(height: 8),
+            ...grouped.entries.map((entry) {
+              final dateLabel = entry.key;
+              final meetings = entry.value;
+              final expanded = _expandedDates[dateLabel]!;
 
-        _DateGroupTile(
-          dateLabel: '14 Sep',
-          meetingCount: 1,
-          expanded: _expanded14Sep,
-          onTap: () {
-            setState(() {
-              _expanded14Sep = !_expanded14Sep;
-            });
-          },
-          children: [
-            _MeetingTile(
-              title: 'Cultural Fest Planning',
-              time: '2:00 PM – 3:00 PM',
-              committee: 'Cultural Committee',
-            ),
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _DateGroupTile(
+                  dateLabel: dateLabel,
+                  meetingCount: meetings.length,
+                  expanded: expanded,
+                  onTap: () {
+                    setState(() {
+                      _expandedDates[dateLabel] = !expanded;
+                    });
+                  },
+                  children: meetings.map((m) {
+                    return _MeetingTile(
+                      title: m['title'],
+                      time: m['time'],
+                      committee: m['committee'],
+                    );
+                  }).toList(),
+                ),
+              );
+            }),
           ],
-        ),
-      ],
+        );
+      },
     );
+  }
+
+  String _monthName(int month) {
+    const months = [
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    return months[month];
   }
 }
 
@@ -126,9 +169,7 @@ class _DateGroupTile extends StatelessWidget {
                     ),
                   ),
                   Icon(
-                    expanded
-                        ? Icons.expand_less
-                        : Icons.expand_more,
+                    expanded ? Icons.expand_less : Icons.expand_more,
                     color: Colors.black54,
                   ),
                 ],
@@ -146,7 +187,7 @@ class _DateGroupTile extends StatelessWidget {
 }
 
 /* =========================
-   MEETING TILE (READ-ONLY)
+   MEETING TILE
    ========================= */
 
 class _MeetingTile extends StatelessWidget {
@@ -162,36 +203,27 @@ class _MeetingTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Meeting details view coming soon'),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
+          const SizedBox(height: 4),
+          Text(
+            '$time · $committee',
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.black54,
             ),
-            const SizedBox(height: 4),
-            Text(
-              '$time · $committee',
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.black54,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

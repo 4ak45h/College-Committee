@@ -1,9 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../../core/theme/app_theme.dart';
+import '../../../services/approval_service.dart';
 import '../widgets/approval_request_card.dart';
 
 class ApprovalQueueScreen extends StatelessWidget {
-  const ApprovalQueueScreen({super.key});
+  ApprovalQueueScreen({super.key});
+
+  final ApprovalService _approvalService = ApprovalService();
+
+  String _formatDate(Timestamp timestamp) {
+    final date = timestamp.toDate();
+    return '${date.day.toString().padLeft(2, '0')} '
+        '${_monthName(date.month)} '
+        '${date.year}';
+  }
+
+  String _monthName(int month) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return months[month - 1];
+  }
+
+  ApprovalType _mapApprovalType(String type) {
+    switch (type) {
+      case 'MEETING':
+        return ApprovalType.meeting;
+      case 'EVENT':
+        return ApprovalType.event;
+      case 'DOCUMENT':
+        return ApprovalType.document;
+      default:
+        return ApprovalType.document;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,31 +48,45 @@ class ApprovalQueueScreen extends StatelessWidget {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: const [
-          ApprovalRequestCard(
-            type: ApprovalType.meeting,
-            title: 'Academic Review Meeting',
-            committee: 'Academic Review Committee',
-            requestedBy: 'Dr. S. Kumar',
-            date: '12 Sep 2026',
-          ),
-          ApprovalRequestCard(
-            type: ApprovalType.event,
-            title: 'Cultural Fest Proposal',
-            committee: 'Cultural Committee',
-            requestedBy: 'Prof. R. Mehta',
-            date: '10 Sep 2026',
-          ),
-          ApprovalRequestCard(
-            type: ApprovalType.document,
-            title: 'Annual Budget Submission',
-            committee: 'Finance Committee',
-            requestedBy: 'Dr. A. Rao',
-            date: '08 Sep 2026',
-          ),
-        ],
+      body: StreamBuilder<QuerySnapshot>(
+        stream: _approvalService.getPendingApprovals(),
+        builder: (context, snapshot) {
+          // 🔄 Loading state
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          // ❌ Error state
+          if (snapshot.hasError) {
+            return const Center(child: Text('Something went wrong'));
+          }
+
+          // 📭 Empty state
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text('No pending approvals'));
+          }
+
+          final approvals = snapshot.data!.docs;
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: approvals.length,
+            itemBuilder: (context, index) {
+              final data =
+              approvals[index].data() as Map<String, dynamic>;
+
+              return ApprovalRequestCard(
+                type: _mapApprovalType(data['type'] ?? ''),
+                title: data['title'] ?? 'Untitled',
+                committee: data['committee'] ?? 'Unknown Committee',
+                requestedBy: data['requestedBy'] ?? 'Unknown',
+                date: data['requestedAt'] != null
+                    ? _formatDate(data['requestedAt'])
+                    : 'N/A',
+              );
+            },
+          );
+        },
       ),
     );
   }
