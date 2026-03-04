@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../widgets/committee_list_card.dart';
 import '../../../services/committee_service.dart';
+import 'create_committee_screen.dart';
 
 class CommitteesScreen extends StatelessWidget {
   CommitteesScreen({super.key});
@@ -65,6 +66,19 @@ class CommitteesScreen extends StatelessWidget {
             },
           );
         },
+      ),
+
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: AppTheme.primary,
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const CreateCommitteeScreen(),
+            ),
+          );
+        },
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }

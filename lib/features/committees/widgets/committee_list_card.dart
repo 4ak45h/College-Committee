@@ -28,6 +28,7 @@ class CommitteeListCard extends StatelessWidget {
           MaterialPageRoute(
             builder: (_) => CommitteeDetailsScreen(
               committeeName: name,
+              status: status,
             ),
           ),
         );
