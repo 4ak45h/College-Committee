@@ -52,6 +52,52 @@ class AdminAuthService {
   Future<void> logout() async {
     await _auth.signOut();
   }
+  Future<DocumentSnapshot> getAdminProfile() async {
+
+    User? user = _auth.currentUser;
+
+    if (user == null) {
+      throw "No logged in user";
+    }
+
+    return await _firestore
+        .collection('admins')
+        .doc(user.uid)
+        .get();
+  }
+  Future<void> updatePassword(String newPassword) async {
+    User? user = _auth.currentUser;
+
+    if (user == null) {
+      throw "No authenticated user found";
+    }
+
+    await user.updatePassword(newPassword);
+  }
+  Future<void> updatePasswordWithReauth({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+
+    User? user = _auth.currentUser;
+
+    if (user == null) {
+      throw "No authenticated user";
+    }
+
+    String email = user.email!;
+
+    // Step 1: Reauthenticate
+    AuthCredential credential = EmailAuthProvider.credential(
+      email: email,
+      password: currentPassword,
+    );
+
+    await user.reauthenticateWithCredential(credential);
+
+    // Step 2: Update password
+    await user.updatePassword(newPassword);
+  }
 
   String _handleError(FirebaseAuthException e) {
     switch (e.code) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../services/audit_log_service.dart';
+import '../../../services/admin_auth_service.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -33,22 +34,43 @@ class _ChangePasswordScreenState
 
     setState(() => _loading = true);
 
-    await Future.delayed(const Duration(milliseconds: 800));
+    try {
+      final newPassword = _newController.text.trim();
 
-    if (!mounted) return;
+      // 1️⃣ Update password using service
+      await AdminAuthService().updatePasswordWithReauth(
+        currentPassword: _currentController.text.trim(),
+        newPassword: _newController.text.trim(),
+      );
 
-    AuditLogService()
-        .addLog('Password changed', 'Security');
+      // 2️⃣ Add audit log
+      AuditLogService().addLog('Password changed', 'Security');
 
-    setState(() => _loading = false);
+      if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Password updated successfully'),
-      ),
-    );
+      // 3️⃣ Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Password updated successfully'),
+        ),
+      );
 
-    Navigator.pop(context);
+      Navigator.pop(context);
+
+    } catch (e) {
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+        ),
+      );
+
+
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
   }
 
   @override

@@ -82,17 +82,19 @@ class _LoginScreenState extends State<LoginScreen>
         throw "Enter valid email and password";
       }
 
-      await _authService.login(
+      final result = await _authService.login(
         email: _emailController.text,
         password: _passwordController.text,
       );
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const AdminHomeScreen(),
-        ),
-      );
+      if (result['success'] == true) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const AdminHomeScreen(),
+          ),
+        );
+      }
     } catch (e) {
       setState(() {
         _error = e.toString();

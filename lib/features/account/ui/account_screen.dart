@@ -5,6 +5,10 @@ import 'system_settings_screen.dart';
 import 'audit_logs_screen.dart';
 import 'change_password_screen.dart';
 import '../../../services/audit_log_service.dart';
+import '../../../services/admin_auth_service.dart';
+import '../../auth/ui/login_screen.dart';
+import '../../../services/admin_auth_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key});
@@ -102,103 +106,102 @@ class AccountScreen extends StatelessWidget {
      ========================= */
 
   Widget _identityCard() {
-    final now = DateTime.now();
+    return FutureBuilder(
+      future: AdminAuthService().getAdminProfile(),
+      builder: (context, snapshot) {
 
-    final formattedTime =
-        "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const CircleAvatar(
-            radius: 26,
-            backgroundColor: AppTheme.primary,
-            child: Icon(
-              Icons.person,
-              color: Colors.white,
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Dr. A. Sharma',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Principal',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.black54,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                const Text(
-                  'Bangalore Institute of Technology',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.black45,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Administrator • ID: ADM-001',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.muted,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Last login: Today, $formattedTime',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.muted,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppTheme.primary.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Text(
-              'Administrator',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: AppTheme.primary,
+        var data = (snapshot.data as DocumentSnapshot).data() as Map<String, dynamic>;
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+
+              const CircleAvatar(
+                radius: 26,
+                backgroundColor: AppTheme.primary,
+                child: Icon(Icons.person, color: Colors.white),
+              ),
+
+              const SizedBox(width: 14),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+
+                    Text(
+                      data['name'] ?? '',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    Text(
+                      data['role'] ?? '',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.black54,
+                      ),
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    Text(
+                      data['email'] ?? '',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.black45,
+                      ),
+                    ),
+
+                  ],
+                ),
+              ),
+
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4
+                ),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  data['role'] ?? '',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppTheme.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
-
   /* =========================
      HELPERS
      ========================= */
@@ -298,11 +301,21 @@ class AccountScreen extends StatelessWidget {
         );
 
         if (confirm == true) {
+
+          // Step 1: Sign out from Firebase
+          await AdminAuthService().logout();
+
+          // Step 2: Log the logout event
           AuditLogService()
               .addLog('Administrator logged out', 'Security');
 
-          Navigator.of(context)
-              .popUntil((route) => route.isFirst);
+          // Step 3: Navigate back to login screen
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (_) => const LoginScreen(),
+            ),
+                (route) => false,
+          );
         }
       },
       child: Container(
