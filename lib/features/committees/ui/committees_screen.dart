@@ -57,6 +57,7 @@ class CommitteesScreen extends StatelessWidget {
               final data = doc.data() as Map<String, dynamic>;
 
               return CommitteeListCard(
+                committeeId: doc.id,
                 name: data['name'] ?? 'Unnamed Committee',
                 coordinator: data['coordinator'] ?? 'N/A',
                 status: data['isActive'] == true

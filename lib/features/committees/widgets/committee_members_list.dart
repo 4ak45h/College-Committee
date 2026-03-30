@@ -1,42 +1,74 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
+import '../widgets/add_member_sheet.dart';
 
 class CommitteeMembersList extends StatelessWidget {
-  const CommitteeMembersList({super.key});
+  final String committeeId;
+
+  const CommitteeMembersList({
+    super.key,
+    required this.committeeId,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Committee Members',
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Committee Members',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.person_add_alt_1),
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  builder: (_) => AddMemberSheet(
+                    committeeId: committeeId,
+                  ),
+                );
+              },
+            ),
+          ],
         ),
         const SizedBox(height: 12),
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('committee_members')
+              .where('committeeId', isEqualTo: committeeId)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const CircularProgressIndicator();
+            }
 
-        _MemberTile(
-          name: 'Dr. R. Mehta',
-          role: 'Chairperson',
-        ),
-        _MemberTile(
-          name: 'Prof. S. Kumar',
-          role: 'Coordinator',
-        ),
-        _MemberTile(
-          name: 'Dr. A. Rao',
-          role: 'Member',
-        ),
-        _MemberTile(
-          name: 'Prof. L. Sharma',
-          role: 'Member',
-        ),
-        _MemberTile(
-          name: 'Dr. N. Iyer',
-          role: 'Member',
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return const Text('No members found');
+            }
+
+            final members = snapshot.data!.docs;
+
+            return Column(
+              children: members.map((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+
+                return _MemberTile(
+                  name: data['facultyName'] ?? '',
+                  role: data['role'] ?? '',
+                  docId: doc.id,
+                );
+              }).toList(),
+            );
+          },
         ),
       ],
     );
@@ -46,10 +78,12 @@ class CommitteeMembersList extends StatelessWidget {
 class _MemberTile extends StatelessWidget {
   final String name;
   final String role;
+  final String docId;
 
   const _MemberTile({
     required this.name,
     required this.role,
+    required this.docId,
   });
 
   @override
@@ -94,6 +128,7 @@ class _MemberTile extends StatelessWidget {
                   : Colors.grey.withOpacity(0.15),
               borderRadius: BorderRadius.circular(12),
             ),
+
             child: Text(
               role,
               style: TextStyle(
@@ -102,6 +137,26 @@ class _MemberTile extends StatelessWidget {
                 color: isLeader ? AppTheme.primary : Colors.black54,
               ),
             ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            onPressed: () async {
+              if (role == 'Chairperson' || role == 'Coordinator') {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Cannot remove Chairperson or Coordinator. Change leadership first.',
+                    ),
+                  ),
+                );
+                return;
+              }
+
+              await FirebaseFirestore.instance
+                  .collection('committee_members')
+                  .doc(docId)
+                  .delete();
+            },
           ),
         ],
       ),

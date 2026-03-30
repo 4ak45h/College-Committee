@@ -1,15 +1,17 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/app_button.dart';
 
 class EditCommitteeScreen extends StatefulWidget {
+  final String committeeId;
   final String committeeName;
 
   const EditCommitteeScreen({
     super.key,
+    required this.committeeId,
     required this.committeeName,
   });
-
   @override
   State<EditCommitteeScreen> createState() =>
       _EditCommitteeScreenState();
@@ -43,17 +45,32 @@ class _EditCommitteeScreenState extends State<EditCommitteeScreen> {
 
     setState(() => _loading = true);
 
-    await Future.delayed(const Duration(milliseconds: 700));
+    try {
+      await FirebaseFirestore.instance
+          .collection('committees')
+          .doc(widget.committeeId)
+          .update({
+        'name': _nameController.text.trim(),
+        'description': _descriptionController.text.trim(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    Navigator.pop(context);
+      Navigator.pop(context);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Committee updated successfully'),
-      ),
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Committee updated successfully'),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+
+    setState(() => _loading = false);
   }
 
   @override

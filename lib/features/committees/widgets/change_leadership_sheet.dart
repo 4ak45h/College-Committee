@@ -1,8 +1,14 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 
 class ChangeLeadershipSheet extends StatefulWidget {
-  const ChangeLeadershipSheet({super.key});
+  final String committeeId;
+
+  const ChangeLeadershipSheet({
+    super.key,
+    required this.committeeId,
+  });
 
   @override
   State<ChangeLeadershipSheet> createState() =>
@@ -139,15 +145,80 @@ class _ChangeLeadershipSheetState extends State<ChangeLeadershipSheet> {
         Expanded(
           child: ElevatedButton(
             onPressed: canSubmit
-                ? () {
-                    // Future: persist leadership change
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Leadership updated successfully'),
-                      ),
-                    );
-                  }
+                ? () async {
+              final committeeId = widget.committeeId;
+              final newChair = _selectedChairperson;
+              final newCoordinator = _selectedCoordinator;
+
+              /// STEP 1 — Update committees
+              await FirebaseFirestore.instance
+                  .collection('committees')
+                  .doc(committeeId)
+                  .update({
+                'chairperson': newChair,
+                'coordinator': newCoordinator,
+                'updatedAt': FieldValue.serverTimestamp(),
+              });
+
+              /// STEP 2 — Get existing members
+              final membersSnapshot = await FirebaseFirestore.instance
+                  .collection('committee_members')
+                  .where('committeeId', isEqualTo: committeeId)
+                  .get();
+
+              List<String> existingMembers = [];
+
+              for (var doc in membersSnapshot.docs) {
+                final data = doc.data();
+                final facultyName = data['facultyName'];
+                existingMembers.add(facultyName);
+
+                String role = 'Member';
+
+                if (facultyName == newChair) {
+                  role = 'Chairperson';
+                } else if (facultyName == newCoordinator) {
+                  role = 'Coordinator';
+                }
+
+                await FirebaseFirestore.instance
+                    .collection('committee_members')
+                    .doc(doc.id)
+                    .update({'role': role});
+              }
+
+              /// STEP 3 — Add new Chair if not member
+              if (!existingMembers.contains(newChair)) {
+                await FirebaseFirestore.instance
+                    .collection('committee_members')
+                    .add({
+                  'committeeId': committeeId,
+                  'facultyName': newChair,
+                  'role': 'Chairperson',
+                  'joinedAt': FieldValue.serverTimestamp(),
+                });
+              }
+
+              /// STEP 4 — Add new Coordinator if not member
+              if (!existingMembers.contains(newCoordinator)) {
+                await FirebaseFirestore.instance
+                    .collection('committee_members')
+                    .add({
+                  'committeeId': committeeId,
+                  'facultyName': newCoordinator,
+                  'role': 'Coordinator',
+                  'joinedAt': FieldValue.serverTimestamp(),
+                });
+              }
+
+              Navigator.pop(context);
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Leadership updated successfully'),
+                ),
+              );
+            }
                 : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primary,

@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../services/committee_service.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/app_button.dart';
@@ -17,6 +19,7 @@ class _CreateCommitteeScreenState extends State<CreateCommitteeScreen> {
       TextEditingController();
   final TextEditingController _descriptionController =
       TextEditingController();
+  final CommitteeService _committeeService = CommitteeService();
 
   String? _selectedChair;
   String? _selectedCoordinator;
@@ -53,19 +56,58 @@ class _CreateCommitteeScreenState extends State<CreateCommitteeScreen> {
 
     setState(() => _loading = true);
 
-    await Future.delayed(const Duration(milliseconds: 800));
+    try {
+      /// Create Committee
+      final committeeRef =
+      await FirebaseFirestore.instance.collection('committees').add({
+        'name': _nameController.text.trim(),
+        'description': _descriptionController.text.trim(),
+        'chairperson': _selectedChair,
+        'coordinator': _selectedCoordinator,
+        'isActive': true,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
 
-    if (!mounted) return;
+      final committeeId = committeeRef.id;
 
-    Navigator.pop(context);
+      /// Add Chairperson to committee_members
+      await FirebaseFirestore.instance
+          .collection('committee_members')
+          .add({
+        'committeeId': committeeId,
+        'facultyName': _selectedChair,
+        'role': 'Chairperson',
+        'joinedAt': FieldValue.serverTimestamp(),
+      });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Committee created successfully'),
-      ),
-    );
+      /// Add Coordinator to committee_members
+      await FirebaseFirestore.instance
+          .collection('committee_members')
+          .add({
+        'committeeId': committeeId,
+        'facultyName': _selectedCoordinator,
+        'role': 'Coordinator',
+        'joinedAt': FieldValue.serverTimestamp(),
+      });
+
+      if (!mounted) return;
+
+      Navigator.pop(context);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Committee created successfully'),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+
+    setState(() => _loading = false);
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

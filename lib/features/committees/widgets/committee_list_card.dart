@@ -5,12 +5,14 @@ import '../ui/committee_details_screen.dart';
 enum CommitteeStatus { active, inactive }
 
 class CommitteeListCard extends StatelessWidget {
+  final String committeeId;
   final String name;
   final String coordinator;
   final CommitteeStatus status;
 
   const CommitteeListCard({
     super.key,
+    required this.committeeId,
     required this.name,
     required this.coordinator,
     required this.status,
@@ -27,6 +29,7 @@ class CommitteeListCard extends StatelessWidget {
           context,
           MaterialPageRoute(
             builder: (_) => CommitteeDetailsScreen(
+              committeeId: committeeId,
               committeeName: name,
               status: status,
             ),

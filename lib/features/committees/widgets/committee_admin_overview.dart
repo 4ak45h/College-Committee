@@ -1,16 +1,22 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import 'change_leadership_sheet.dart';
 import 'committee_list_card.dart';
 
 class CommitteeAdminOverview extends StatelessWidget {
+  final String committeeId;
   final CommitteeStatus status;
+  final String chairperson;
+  final String coordinator;
 
   const CommitteeAdminOverview({
     super.key,
+    required this.committeeId,
     required this.status,
+    required this.chairperson,
+    required this.coordinator,
   });
-
   @override
   Widget build(BuildContext context) {
     final bool isActive = status == CommitteeStatus.active;
@@ -44,8 +50,8 @@ class CommitteeAdminOverview extends StatelessWidget {
             label: 'Status',
             value: isActive ? 'Active' : 'Inactive',
           ),
-          const _InfoRow(label: 'Chairperson', value: 'Dr. R. Mehta'),
-          const _InfoRow(label: 'Coordinator', value: 'Prof. S. Kumar'),
+          _InfoRow(label: 'Chairperson', value: chairperson),
+          _InfoRow(label: 'Coordinator', value: coordinator),
 
           const SizedBox(height: 16),
 
@@ -61,7 +67,9 @@ class CommitteeAdminOverview extends StatelessWidget {
                       borderRadius:
                           BorderRadius.vertical(top: Radius.circular(20)),
                     ),
-                    builder: (_) => const ChangeLeadershipSheet(),
+                      builder: (_) => ChangeLeadershipSheet(
+                        committeeId: committeeId,
+                      ),
                   );
                 },
                 icon: const Icon(Icons.swap_horiz),
@@ -121,8 +129,17 @@ class CommitteeAdminOverview extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
             ),
-            onPressed: () {
+            onPressed: () async {
+              await FirebaseFirestore.instance
+                  .collection('committees')
+                  .doc(committeeId)
+                  .update({
+                'isActive': false,
+                'updatedAt': FieldValue.serverTimestamp(),
+              });
+
               Navigator.pop(context);
+
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Committee deactivated'),
@@ -153,8 +170,17 @@ class CommitteeAdminOverview extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,
             ),
-            onPressed: () {
+            onPressed: () async {
+              await FirebaseFirestore.instance
+                  .collection('committees')
+                  .doc(committeeId)
+                  .update({
+                'isActive': true,
+                'updatedAt': FieldValue.serverTimestamp(),
+              });
+
               Navigator.pop(context);
+
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Committee reactivated'),
