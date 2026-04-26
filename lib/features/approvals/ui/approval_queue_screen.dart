@@ -51,17 +51,15 @@ class ApprovalQueueScreen extends StatelessWidget {
       body: StreamBuilder<QuerySnapshot>(
         stream: _approvalService.getPendingApprovals(),
         builder: (context, snapshot) {
-          // 🔄 Loading state
+
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // ❌ Error state
           if (snapshot.hasError) {
             return const Center(child: Text('Something went wrong'));
           }
 
-          // 📭 Empty state
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return const Center(child: Text('No pending approvals'));
           }
@@ -72,17 +70,35 @@ class ApprovalQueueScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             itemCount: approvals.length,
             itemBuilder: (context, index) {
-              final data =
-              approvals[index].data() as Map<String, dynamic>;
+              final doc = approvals[index];
+              final data = doc.data() as Map<String, dynamic>;
+
+              final docId = doc.id;
 
               return ApprovalRequestCard(
                 type: _mapApprovalType(data['type'] ?? ''),
                 title: data['title'] ?? 'Untitled',
                 committee: data['committee'] ?? 'Unknown Committee',
-                requestedBy: data['requestedBy'] ?? 'Unknown',
-                date: data['requestedAt'] != null
-                    ? _formatDate(data['requestedAt'])
+
+                /// ✅ REMOVED requestedBy
+
+                date: data['createdAt'] != null
+                    ? _formatDate(data['createdAt'])
                     : 'N/A',
+
+                onApprove: () async {
+                  await _approvalService.updateApprovalStatus(
+                      docId,
+                      "APPROVED"
+                  );
+                },
+
+                onReject: () async {
+                  await _approvalService.updateApprovalStatus(
+                      docId,
+                      "REJECTED"
+                  );
+                },
               );
             },
           );

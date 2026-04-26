@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../../../core/theme/app_theme.dart';
 import '../../../approvals/ui/approval_queue_screen.dart';
 import '../../../committees/ui/committees_screen.dart';
@@ -22,24 +24,39 @@ class AdminMetricsSection extends StatelessWidget {
         ),
         const SizedBox(height: 16),
 
-        // HERO METRIC — Pending Approvals (CLICKABLE)
-        HeroMetricCard(
-          title: 'Pending Approvals',
-          value: '3',
-          subtitle: 'Requires immediate attention',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ApprovalQueueScreen(),
-              ),
+        /// 🔥 HERO METRIC — Pending Approvals (LIVE)
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('approvals')
+              .where('status', isEqualTo: 'PENDING')
+              .snapshots(),
+          builder: (context, snapshot) {
+
+            String value = "...";
+
+            if (snapshot.hasData) {
+              value = snapshot.data!.docs.length.toString();
+            }
+
+            return HeroMetricCard(
+              title: 'Pending Approvals',
+              value: value,
+              subtitle: 'Requires immediate attention',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ApprovalQueueScreen(),
+                  ),
+                );
+              },
             );
           },
         ),
 
         const SizedBox(height: 16),
 
-        // REGULAR METRICS
+        /// 🔥 GRID METRICS (LIVE)
         GridView.count(
           crossAxisCount: 2,
           shrinkWrap: true,
@@ -47,9 +64,13 @@ class AdminMetricsSection extends StatelessWidget {
           mainAxisSpacing: 16,
           crossAxisSpacing: 16,
           children: [
-            MetricCard(
+
+            /// COMMITTEES COUNT
+            _buildMetricCard(
+              stream: FirebaseFirestore.instance
+                  .collection('committees')
+                  .snapshots(),
               title: 'Committees',
-              value: '12',
               onTap: () {
                 Navigator.push(
                   context,
@@ -59,9 +80,13 @@ class AdminMetricsSection extends StatelessWidget {
                 );
               },
             ),
-            MetricCard(
+
+            /// FACULTY COUNT
+            _buildMetricCard(
+              stream: FirebaseFirestore.instance
+                  .collection('faculty')
+                  .snapshots(),
               title: 'Faculty Members',
-              value: '86',
               onTap: () {
                 Navigator.push(
                   context,
@@ -71,9 +96,14 @@ class AdminMetricsSection extends StatelessWidget {
                 );
               },
             ),
-            MetricCard(
-              title: 'Events This Month',
-              value: '8',
+
+            /// APPROVED EVENTS COUNT
+            _buildMetricCard(
+              stream: FirebaseFirestore.instance
+                  .collection('events')
+                  .where('status', isEqualTo: 'Approved')
+                  .snapshots(),
+              title: 'Approved Events',
               onTap: () {
                 Navigator.push(
                   context,
@@ -83,7 +113,9 @@ class AdminMetricsSection extends StatelessWidget {
                 );
               },
             ),
-            MetricCard(
+
+            /// STATIC INSIGHT (UNCHANGED)
+            const MetricCard(
               title: 'Average Attendance',
               value: '92%',
               isInsight: true,
@@ -91,6 +123,31 @@ class AdminMetricsSection extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+
+  /// 🔥 REUSABLE STREAM CARD
+  Widget _buildMetricCard({
+    required Stream<QuerySnapshot> stream,
+    required String title,
+    VoidCallback? onTap,
+  }) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: stream,
+      builder: (context, snapshot) {
+
+        String value = "...";
+
+        if (snapshot.hasData) {
+          value = snapshot.data!.docs.length.toString();
+        }
+
+        return MetricCard(
+          title: title,
+          value: value,
+          onTap: onTap,
+        );
+      },
     );
   }
 }
@@ -200,12 +257,12 @@ class MetricCard extends StatelessWidget {
         boxShadow: isInsight
             ? []
             : [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 14,
-                  offset: const Offset(0, 6),
-                ),
-              ],
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
         border: isInsight
             ? Border.all(color: Colors.grey.shade300)
             : null,
@@ -245,7 +302,6 @@ class MetricCard extends StatelessWidget {
       ),
     );
 
-    // Insight cards are NEVER clickable
     if (isInsight || onTap == null) return card;
 
     return InkWell(
@@ -255,5 +311,3 @@ class MetricCard extends StatelessWidget {
     );
   }
 }
-
-

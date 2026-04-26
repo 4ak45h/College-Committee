@@ -7,16 +7,19 @@ class ApprovalRequestCard extends StatelessWidget {
   final ApprovalType type;
   final String title;
   final String committee;
-  final String requestedBy;
   final String date;
+
+  final VoidCallback onApprove;
+  final VoidCallback onReject;
 
   const ApprovalRequestCard({
     super.key,
     required this.type,
     required this.title,
     required this.committee,
-    required this.requestedBy,
     required this.date,
+    required this.onApprove,
+    required this.onReject,
   });
 
   @override
@@ -41,7 +44,9 @@ class ApprovalRequestCard extends StatelessWidget {
           _buildHeader(),
           const SizedBox(height: 12),
           _buildMetaRow('Committee', committee),
-          _buildMetaRow('Requested by', requestedBy),
+
+          /// ✅ REMOVED Requested By
+
           _buildMetaRow('Submitted on', date),
           const SizedBox(height: 16),
           _buildActions(context),
@@ -120,9 +125,7 @@ class ApprovalRequestCard extends StatelessWidget {
       children: [
         Expanded(
           child: OutlinedButton(
-            onPressed: () {
-              // Future: Reject logic
-            },
+            onPressed: onReject,
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.red,
             ),
@@ -132,9 +135,7 @@ class ApprovalRequestCard extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: ElevatedButton(
-            onPressed: () {
-              // Future: Approve logic
-            },
+            onPressed: onApprove,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primary,
             ),

@@ -56,34 +56,28 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-        const AdminMetricsSection(),
-        const SizedBox(height: 20),
-        const AdminActionsSection(),
-        const SizedBox(height: 20),
-        const AdminAlertsSection(),
-        const SizedBox(height: 20),
-        const UpcomingMeetingsSection(),
+          AdminMetricsSection(), // ✅ removed const
+          const SizedBox(height: 20),
+          const AdminActionsSection(),
+          const SizedBox(height: 20),
+          const AdminAlertsSection(),
+          const SizedBox(height: 20),
+          const UpcomingMeetingsSection(),
         ],
       ),
     );
   }
 
   Widget _buildBody() {
-  switch (_currentIndex) {
-    case 0:
-      return _buildDashboard();
-    case 1:
-      return CommitteesScreen();
-    case 2:
-      return const AccountScreen();
-    default:
-      return _buildDashboard();
-  }
-}
-
-  Widget _placeholder() {
-    return const Center(
-      child: Text('This section will be implemented later'),
-    );
+    switch (_currentIndex) {
+      case 0:
+        return _buildDashboard();
+      case 1:
+        return CommitteesScreen();
+      case 2:
+        return const AccountScreen();
+      default:
+        return _buildDashboard();
+    }
   }
 }
