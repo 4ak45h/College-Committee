@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../../core/theme/app_theme.dart';
-import '../../../services/audit_log_service.dart';
 
 class AuditLogsScreen extends StatefulWidget {
   const AuditLogsScreen({super.key});
@@ -14,58 +15,81 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final service = AuditLogService();
-
-    final logs = _filter == 'All'
-        ? service.logs
-        : service.logs.where((log) => log.category == _filter).toList();
-
     return Scaffold(
       backgroundColor: AppTheme.bg,
       appBar: AppBar(
         title: const Text('Audit Logs'),
         backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
-            onPressed: () {
-              service.clearLogs();
-              setState(() {});
-            },
-          ),
-        ],
       ),
       body: Column(
         children: [
+
+          /// FILTERS
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
                 _filterChip('All'),
                 const SizedBox(width: 8),
-                _filterChip('Role'),
+                _filterChip('event'),
                 const SizedBox(width: 8),
-                _filterChip('Committee'),
+                _filterChip('committee'),
               ],
             ),
           ),
+
+          /// LIST
           Expanded(
-            child: logs.isEmpty
-                ? const Center(
-                    child: Text(
-                      'No activity recorded',
-                      style: TextStyle(color: Colors.black54),
-                    ),
-                  )
-                : ListView.builder(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: logs.length,
-                    itemBuilder: (context, index) {
-                      return _AuditLogCard(log: logs[index]);
-                    },
-                  ),
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('audit_logs')
+                  .orderBy('timestamp', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return const Center(child: Text("Error loading logs"));
+                }
+
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(
+                    child: Text('No activity recorded'),
+                  );
+                }
+
+                final logs = snapshot.data!.docs;
+
+                /// FILTER LOGIC
+                final filteredLogs = _filter == 'All'
+                    ? logs
+                    : logs.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  return data['entityType'] == _filter;
+                }).toList();
+
+                if (filteredLogs.isEmpty) {
+                  return const Center(
+                    child: Text('No activity for selected filter'),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: filteredLogs.length,
+                  itemBuilder: (context, index) {
+                    final data =
+                    filteredLogs[index].data() as Map<String, dynamic>;
+
+                    return _AuditLogCard(data: data);
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -73,12 +97,12 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
   }
 
   Widget _filterChip(String label) {
-    final bool isSelected = _filter == label;
+    final isSelected = _filter == label;
 
     return ChoiceChip(
       label: Text(label),
       selected: isSelected,
-      selectedColor: AppTheme.primary.withOpacity(0.15),
+      selectedColor: AppTheme.primary.withOpacity(0.2),
       labelStyle: TextStyle(
         color: isSelected ? AppTheme.primary : Colors.black54,
       ),
@@ -90,27 +114,35 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
 }
 
 class _AuditLogCard extends StatelessWidget {
-  final AuditLogModel log;
+  final Map<String, dynamic> data;
 
-  const _AuditLogCard({required this.log});
+  const _AuditLogCard({required this.data});
 
   @override
   Widget build(BuildContext context) {
+
+    final action = data['action'] ?? '';
+    final details = data['details'] ?? '';
+    final timestamp = data['timestamp'] as Timestamp?;
+
     IconData icon;
     Color color;
 
-    switch (log.category) {
-      case 'Role':
-        icon = Icons.admin_panel_settings_outlined;
-        color = Colors.blue;
-        break;
-      case 'Committee':
-        icon = Icons.groups_outlined;
-        color = Colors.green;
-        break;
-      default:
-        icon = Icons.info_outline;
-        color = Colors.grey;
+    if (action.contains("CREATE")) {
+      icon = Icons.add_circle_outline;
+      color = Colors.blue;
+    } else if (action.contains("APPROVE")) {
+      icon = Icons.check_circle_outline;
+      color = Colors.green;
+    } else if (action.contains("REJECT")) {
+      icon = Icons.cancel_outlined;
+      color = Colors.red;
+    } else if (action.contains("DELETE")) {
+      icon = Icons.delete_outline;
+      color = Colors.grey;
+    } else {
+      icon = Icons.info_outline;
+      color = Colors.black54;
     }
 
     return Container(
@@ -131,20 +163,39 @@ class _AuditLogCard extends StatelessWidget {
         children: [
           Icon(icon, color: color),
           const SizedBox(width: 12),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+
+                /// ACTION
                 Text(
-                  log.action,
+                  _formatAction(action),
                   style: const TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
+
                 const SizedBox(height: 4),
+
+                /// DETAILS
                 Text(
-                  _formatTimestamp(log.timestamp),
+                  details,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.black87,
+                  ),
+                ),
+
+                const SizedBox(height: 6),
+
+                /// TIME
+                Text(
+                  timestamp != null
+                      ? _formatTime(timestamp.toDate())
+                      : '',
                   style: const TextStyle(
                     fontSize: 12,
                     color: Colors.black54,
@@ -158,7 +209,14 @@ class _AuditLogCard extends StatelessWidget {
     );
   }
 
-  static String _formatTimestamp(DateTime time) {
+  String _formatAction(String action) {
+    return action
+        .replaceAll("_", " ")
+        .toLowerCase()
+        .replaceFirstMapped(RegExp(r'^\w'), (m) => m.group(0)!.toUpperCase());
+  }
+
+  String _formatTime(DateTime time) {
     return '${time.day}/${time.month}/${time.year} • '
         '${time.hour.toString().padLeft(2, '0')}:'
         '${time.minute.toString().padLeft(2, '0')}';
